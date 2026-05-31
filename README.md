@@ -1,81 +1,75 @@
 <div align="center">
-  <img src="./banner.svg" alt="DocLayoutParser" width="680" />
+    <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="banner-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="banner-light.svg">
+    <img alt="ITMOScript preview" src="banner-light.svg">
+    </picture>
 </div>
 
-![Java](https://img.shields.io/badge/Java_17-ED8B00?style=flat&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.2-6DB33F?style=flat&logo=springboot&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat&logo=postgresql&logoColor=white)
-![OpenCV](https://img.shields.io/badge/OpenCV_4.9-5C3EE8?style=flat&logo=opencv&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
-![MinIO](https://img.shields.io/badge/MinIO-C72E49?style=flat&logo=minio&logoColor=white)
+> [Русская версия](README_RU.md)
 
-Инструмент для массовой оцифровки однотипных рукописных исторических документов.
+[![Java](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.9-5C3EE8?logo=opencv&logoColor=white)](https://opencv.org/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Исследователь один раз размечает шаблон — обводит мышью нужные поля на образце. Дальше система сама обрабатывает любое количество аналогичных страниц: вырезает фрагменты, распознаёт рукопись и исправляет ошибки через языковую модель. На выходе — структурированная таблица, готовая к анализу.
+Batch digitization tool for handwritten historical documents. Draw a template once — mark the fields you need on a sample page. The system then processes any number of similar documents automatically: crops regions, runs OCR, and corrects errors with an LLM. Output is a structured table ready for analysis.
 
----
+## Why
 
-## Зачем это нужно
+Manual transcription of handwritten text is slow. A single document with a dozen fields takes minutes to half an hour. At the scale of thousands of archival items, that's years of work.
 
-Ручная расшифровка рукописного текста — медленная работа. Один документ с десятком полей занимает от нескольких минут до получаса. При масштабе в тысячи единиц хранения это превращается в многолетний труд.
+Existing solutions are either unaffordable (Transkribus, ABBYY), poor quality on Russian handwriting (Tesseract, TrOCR), or cost hundreds of thousands of rubles (Smart Engines). This tool takes a different approach: no programming required, visual interface, modular OCR pipeline that can switch providers without touching business logic.
 
-Существующие решения либо недоступны для оплаты (Transkribus, ABBYY), либо дают низкое качество на русской рукописи (Tesseract, TrOCR), либо стоят сотни тысяч рублей (Smart Engines). DocLayoutParser предлагает другой подход: без программирования, через визуальный интерфейс, с модульным OCR-пайплайном который легко переключается на любого провайдера.
-
----
-
-## Как это работает
+## How it works
 
 ```
-Загрузить образец → Разметить поля → Обработать пакет → Получить CSV/JSON
+Upload sample → Mark fields → Process batch → Get CSV/JSON
 ```
 
-1. Пользователь загружает образец документа и рисует прямоугольники вокруг нужных полей — система сохраняет координаты относительно размеров эталона
-2. При обработке нового документа вычисляется коэффициент масштабирования, OpenCV вырезает размеченные зоны с учётом паддинга
-3. Фрагменты уходят в OCR-провайдер (в текущей реализации — Yandex Cloud OCR, `handwritten`)
-4. Сырой текст передаётся в LLM, которая исправляет ошибки по контексту
-5. На выходе — JSON с распознанными полями; подписи сохраняются как изображения в Base64
+1. User uploads a sample document and draws rectangles around target fields — coordinates are stored relative to the reference image size
+2. For each new document, a scale factor is computed; OpenCV crops the marked zones with padding
+3. Cropped fragments go to the OCR provider (currently Yandex Cloud OCR, `handwritten` model)
+4. Raw text is passed to an LLM for context-aware error correction
+5. Output: JSON with recognized fields; signatures are saved as Base64 images
 
----
+## Features
 
-## Возможности
+- **Template editor** — visual field markup (text, numbers, signatures) via Canvas API, no coding
+- **Batch processing** — one template for thousands of documents
+- **LLM correction** — recovers meaning where OCR misread a character
+- **Multi-page PDFs** — separate markup per page
+- **Export** — JSON and CSV; full processing job history
+- **Modular architecture** — swap OCR or LLM provider by changing one interface implementation
 
-- **Редактор шаблонов** — визуальная разметка зон на изображении (текст, числа, подписи) через Canvas API, без программирования
-- **Пакетная обработка** — один шаблон на тысячи документов
-- **LLM-коррекция** — восстанавливает смысл там, где OCR прочитал букву неверно
-- **Многостраничные PDF** — для каждой страницы можно задать отдельную разметку
-- **Экспорт** — JSON и CSV; история всех задач обработки
-- **Модульная архитектура** — OCR и LLM-провайдер меняются без переписывания бизнес-логики
+## Tech Stack
 
----
-
-## Стек
-
-| Слой | Технологии |
-|---|---|
+| Layer | Technologies |
+|-------|-------------|
 | Backend | Java 17, Spring Boot 3.2.5, Spring Data JPA, Hibernate |
-| База данных | PostgreSQL 15, Liquibase |
-| Объектное хранилище | MinIO (S3-совместимый), AWS SDK v2, presigned URLs |
-| Обработка изображений | OpenCV 4.9 (openpnp) — выравнивание, кроп, гомография |
-| PDF | Apache PDFBox 3.0.2 — рендер страниц в JPEG |
-| OCR | Yandex Cloud OCR API, модель `handwritten` |
-| LLM-постобработка | Deepseek V3.2 через Yandex AI Studio |
-| Frontend | Thymeleaf, Vanilla JS (ES-модули), Canvas API |
-| Инфраструктура | Docker, Docker Compose, Eclipse Temurin 17 |
-| API-документация | SpringDoc OpenAPI (Swagger UI) |
-| Маппинг | MapStruct, Lombok |
+| Database | PostgreSQL 15, Liquibase |
+| Object storage | MinIO (S3-compatible), AWS SDK v2, presigned URLs |
+| Image processing | OpenCV 4.9 (openpnp) — alignment, crop, homography |
+| PDF | Apache PDFBox 3.0.2 — page rendering to JPEG |
+| OCR | Yandex Cloud OCR API, `handwritten` model |
+| LLM post-processing | Deepseek V3.2 via Yandex AI Studio |
+| Frontend | Thymeleaf, Vanilla JS (ES modules), Canvas API |
+| Infrastructure | Docker, Docker Compose, Eclipse Temurin 17 |
+| API docs | SpringDoc OpenAPI (Swagger UI) |
+| Mapping | MapStruct, Lombok |
 
----
+## Architecture
 
-## Архитектура
-
-Приложение построено по принципу **Hexagonal Architecture** (ports & adapters): бизнес-логика в domain-слое ничего не знает о конкретных внешних сервисах — она работает только через интерфейсы-порты. Это позволило менять OCR-провайдера три раза в процессе разработки, не трогая ядро.
+Built on **Hexagonal Architecture** (ports & adapters): the domain layer knows nothing about specific external services — it works only through port interfaces. This allowed swapping the OCR provider three times during development without touching the core.
 
 ```mermaid
 flowchart TB
-    subgraph UI["Браузер (Thymeleaf + Vanilla JS)"]
-        ED["Редактор шаблонов\nCanvas API"]
-        RC["Страница распознавания\npolling / drag-and-drop"]
-        JH["История задач"]
+    subgraph UI["Browser (Thymeleaf + Vanilla JS)"]
+        ED["Template Editor\nCanvas API"]
+        RC["Recognition Page\npolling / drag-and-drop"]
+        JH["Job History"]
     end
 
     subgraph API["Spring Boot — Presentation"]
@@ -87,25 +81,25 @@ flowchart TB
     subgraph Domain["Spring Boot — Domain"]
         TS["TemplateService"]
         BRS["BatchRecognitionService\n@Async executor"]
-        RS["RecognitionService\n(ядро пайплайна)"]
+        RS["RecognitionService\n(pipeline core)"]
     end
 
     subgraph Infra["Spring Boot — Infrastructure"]
         S3A["MinIO Adapter\nAWS SDK v2"]
         OCRA["YandexOcrService"]
         LLMA["LlmCorrectionService"]
-        ALIGNER["OpenCvDocumentAligner\nORB + гомография"]
+        ALIGNER["OpenCvDocumentAligner\nORB + homography"]
         PDF["PdfPageExtractor\nPDFBox 3"]
     end
 
-    subgraph Storage["Хранилище"]
-        PG[("PostgreSQL 15\nLiquibase-миграции")]
+    subgraph Storage["Storage"]
+        PG[("PostgreSQL 15\nLiquibase migrations")]
         S3[("MinIO S3\nuploads · reference-images")]
     end
 
-    subgraph External["Внешние API"]
+    subgraph External["External APIs"]
         YOCR["Yandex OCR\nhandwritten / ru"]
-        YLLM["LLM-провайдер\nDeepseek V3.2"]
+        YLLM["LLM provider\nDeepseek V3.2"]
     end
 
     ED -->|"multipart: dto + file"| TC
@@ -123,58 +117,56 @@ flowchart TB
     S3A --> S3
     OCRA --> YOCR
     LLMA --> YLLM
-    RC -->|"GET /api/jobs/{id}\nкаждые 1.5 с"| JC
+    RC -->|"GET /api/jobs/{id}\nevery 1.5s"| JC
     JC --> PG
     JH --> JC
 ```
 
----
-
-## Путь документа через систему
+## Document pipeline
 
 ```mermaid
 flowchart LR
-    INPUT["Скан / PDF\nот пользователя"]
+    INPUT["Scan / PDF\nfrom user"]
 
-    subgraph PREP["Подготовка"]
+    subgraph PREP["Preparation"]
         direction TB
-        P1["PDFBox: рендер\nстраниц в JPEG\n200 DPI"]
-        P2["Загрузка\nв MinIO S3"]
+        P1["PDFBox: render\npages to JPEG\n200 DPI"]
+        P2["Upload\nto MinIO S3"]
         P1 --> P2
     end
 
-    subgraph ALIGN["Выравнивание (OpenCV)"]
+    subgraph ALIGN["Alignment (OpenCV)"]
         direction TB
-        A1["ORB — детектирование\n500 ключевых точек"]
+        A1["ORB — detect\n500 keypoints"]
         A2["BFMatcher (Hamming)\n+ Lowe ratio test"]
-        A3["findHomography\n(RANSAC, >= 12 точек)"]
-        A4["warpPerspective\nк размеру эталона"]
+        A3["findHomography\n(RANSAC, >= 12 points)"]
+        A4["warpPerspective\nto reference size"]
         A1 --> A2 --> A3 --> A4
-        A3 -->|"< 12 совпадений\nfallback"| A4
+        A3 -->|"< 12 matches\nfallback"| A4
     end
 
-    subgraph EXTRACT["Извлечение полей"]
+    subgraph EXTRACT["Field extraction"]
         direction TB
-        E1["Масштабирование bbox\nscaleX/Y = doc / base"]
+        E1["Scale bbox\nscaleX/Y = doc / base"]
         E2["OpenCV crop\n+ padding"]
         E1 --> E2
     end
 
-    subgraph RECOGNIZE["Распознавание"]
+    subgraph RECOGNIZE["Recognition"]
         direction TB
-        R1{"Тип поля"}
-        R2["OCR-провайдер"]
-        R3["LLM-коррекция"]
-        R4["Вырезка\nи сохранение в S3"]
+        R1{"Field type"}
+        R2["OCR provider"]
+        R3["LLM correction"]
+        R4["Crop &\nsave to S3"]
         R1 -->|"TEXT / NUMERIC\nDATE / TABLE"| R2
         R2 --> R3
         R1 -->|"SIGNATURE"| R4
-        R1 -->|"ANCHOR"| SKIP["пропуск"]
+        R1 -->|"ANCHOR"| SKIP["skip"]
     end
 
-    subgraph OUT["Результат"]
-        O1["recognition_results\nв PostgreSQL"]
-        O2["JSON / CSV\nдля скачивания"]
+    subgraph OUT["Output"]
+        O1["recognition_results\nin PostgreSQL"]
+        O2["JSON / CSV\nfor download"]
         O1 --> O2
     end
 
@@ -186,80 +178,60 @@ flowchart LR
     R4 --> O1
 ```
 
----
+## Quality metrics
 
-## Тестирование на реальных документах
+Tested on real archival documents. Test corpus used full pages without field markup — a harder condition than production (where the system receives clean cropped fragments).
 
-Параллельно с разработкой вели работу с реальными архивными материалами — искали однотипные документы с чёткой структурой полей, размечали шаблоны и обрабатывали через систему.
-
-**Акты о рождении** — метрические книги из открытых фондов [Яндекс.Архива](https://yandex.ru/archive). Каждая страница содержит две записи, шаблон включает 9×2 = 18 полей. Обработано 6 страниц (12 записей). Качество превосходное — аккуратный канцелярский почерк, стандартизированный бланк.
-
-**Плановая таблица боя** — документ военного делопроизводства с портала [«Память Народа»](https://pamyat-naroda.ru). Шаблон из 11 полей. Именно на этом документе сравнивались все OCR-движки и был выбран итоговый стек.
-
-### Метрики качества
-
-Тестовый корпус — страницы целиком без разметки полей, что заведомо хуже реальных условий работы: в реальности система получает чистые вырезанные фрагменты без колонтитулов и артефактов сканирования.
-
-| Тип документа | CER без LLM | CER с LLM | WER без LLM | WER с LLM |
+| Document type | CER without LLM | CER with LLM | WER without LLM | WER with LLM |
 |---|---|---|---|---|
-| Машинопечатный (советская эпоха) | 7.21% | **4.35%** | 37.78% | **16.74%** |
-| Рукописный (начало XX века) | 22.41% | **16.98%** | 57.71% | **41.91%** |
+| Typewritten (Soviet era) | 7.21% | **4.35%** | 37.78% | **16.74%** |
+| Handwritten (early 20th c.) | 22.41% | **16.98%** | 57.71% | **41.91%** |
 
-> CER < 10% — приемлемо для исследовательской работы; CER < 3% — профессиональный архивный стандарт.
+> CER < 10% is acceptable for research; CER < 3% is the professional archival standard.
 
-LLM-коррекция снижает CER машинопечатного текста до 4.35% и вдвое уменьшает WER. На рукописи XIX–XX века результат скромнее — Yandex OCR обучался преимущественно на современной рукописи, это структурное ограничение не решается постобработкой без дообучения базовой модели.
+LLM correction reduces typewritten CER to 4.35% and halves WER. On early 20th-century handwriting the improvement is more modest — Yandex OCR was trained predominantly on modern handwriting, a structural limitation that post-processing alone cannot fully overcome.
 
 <details>
-<summary>Тестовые источники</summary>
+<summary>Test sources</summary>
 
-- Машинопечатные: ГАСО, фонд Р-2020, опись №1, стр. [231](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/231), [232](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/232), [233](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/233), [236](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/236), [237](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/237), [238](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/238)
-- Рукописные: дело Копылова (1906 г.), стр. [9](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/9), [10](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/10), [12](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/12), [14](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/14)
+- Typewritten: GASO, fond R-2020, inventory №1, pp. [231](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/231), [232](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/232), [233](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/233), [236](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/236), [237](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/237), [238](https://yandex.ru/archive/catalog/742f3d4a-4dab-4a2c-91c9-04c7a136a4cf/238)
+- Handwritten: Kopylov case (1906), pp. [9](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/9), [10](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/10), [12](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/12), [14](https://yandex.ru/archive/catalog/065eadb5-c558-42c6-86ef-d113eaee71b3/14)
 
 </details>
 
----
+## OCR stack selection
 
-## Выбор OCR-стека
-
-| Решение | Результат |
+| Solution | Result |
 |---|---|
-| Tesseract | Печатный текст — хорошо; рукопись — неприемлемо |
-| Surya (нейросеть) | Лучше Tesseract, для советской рукописи недостаточно |
-| PaddleOCR | Нестабильные результаты |
-| HuggingFace (церковнославянские модели) + Surya | ~7–10 сек/слово — часы на один документ |
-| **Yandex OCR + Deepseek V3.2** | ✅ Лучшее качество на русской рукописи |
+| Tesseract | Good on print; unacceptable on handwriting |
+| Surya (neural) | Better than Tesseract, insufficient for Soviet handwriting |
+| PaddleOCR | Unstable results |
+| HuggingFace (Church Slavonic models) + Surya | ~7–10 sec/word — hours per document |
+| **Yandex OCR + Deepseek V3.2** | ✅ Best quality on Russian handwriting |
 
-Архитектура с портами позволила менять провайдера без изменений в бизнес-логике — достаточно поменять реализацию одного интерфейса.
-
----
-
-## Запуск
+## Run
 
 ```bash
-git clone https://github.com/...
-docker-compose up --build
+git clone https://github.com/notakeith/handscribe.git
+docker compose up --build
 ```
 
-Редактор шаблонов: [http://localhost:8080/templates/editor](http://localhost:8080/templates/editor)  
-API-документация (Swagger): [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+Template editor: [http://localhost:8080/templates/editor](http://localhost:8080/templates/editor)  
+Swagger UI: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
----
+## Known limitations
 
-## Известные ограничения
+**Variable table geometry** — the system works with fixed rectangles. If column widths vary between documents, markup drifts. Fix: detect table lines via OpenCV as a first pass.
 
-**Плавающая геометрия таблиц** — система работает с фиксированными прямоугольниками. Если ширина ячеек варьируется от экземпляра к экземпляру, разметка съезжает. Решение: детекция линий таблицы через OpenCV или layout-детектор первым проходом.
+**Perspective distortion** — documents must be scanned reasonably flat. Auto-alignment via anchor points (warp perspective) is not implemented.
 
-**Перспективные искажения** — документ должен быть отсканирован относительно ровно. Автовыравнивание по якорным точкам (Warp Perspective) не реализовано.
+**Prompt injection** — if a document contains text like "ignore previous instructions", the LLM will follow it. Basic filtering is in place; proper protection requires dedicated work.
 
-**Prompt injection** — если в документе встречается текст вида «игнорируй предыдущие инструкции», LLM его выполняет. Реализована базовая фильтрация, полноценная защита требует отдельной работы.
+**No async feedback** — batch processing takes ~1 minute; the user waits without progress updates. SSE or WebSocket needed instead of polling.
 
-**Нет асинхронной обработки** — обработка пакета занимает около минуты; пользователь ждёт без обратной связи. Нужны SSE или WebSocket вместо поллинга.
+## Roadmap
 
----
-
-## Что дальше
-
-- Автоматическое определение границ таблиц по линиям документа
-- Дообучение OCR-модели на конкретном типе документов
-- Server-Sent Events для уведомлений о завершении задачи
-- Поддержка нескольких OCR-провайдеров на выбор пользователя
+- Automatic table boundary detection from document lines
+- Fine-tuning OCR model on a specific document type
+- Server-Sent Events for job completion notifications
+- Support for multiple OCR providers selectable by the user
